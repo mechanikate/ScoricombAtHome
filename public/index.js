@@ -7,13 +7,10 @@ function startWorking(maxScore=12) {
 	let prev = "";
 	for(let i=0; i<=maxScore; i++) for(let j=0; j<=maxScore; j++) {
 		document.getElementById("currentDisplay").innerHTML = prev; 
-		window.setTimeout(() => {
-			if(Object.keys(prestoredScorePaths).includes(`${i}-${j}`) || containsArray([i,j],deadEnds)) return;
-			let finall = scoriperm(i,j);
-			prev = `${i}-${j}: ${finall.length} paths`;
-			console.log(prev);
-			prestoredScorePaths[`${i}-${j}`] = finall;
-		}, 50);
+		if(Object.keys(prestoredScorePaths).includes(`${i}-${j}`) || containsArray([i,j],deadEnds)) return;
+		let finall = scoriperm(i,j);
+		prev = `${i}-${j}: ${finall.length} paths`;
+		prestoredScorePaths[`${i}-${j}`] = finall;
 	}
 	Promise.all(tasks);
 	sendData();
