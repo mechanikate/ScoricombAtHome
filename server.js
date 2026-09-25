@@ -6,15 +6,15 @@ const app = express();
 const port = process.env.PORT || 3000;
 const sumVals = v => v.reduce((a,b)=>a+b);
 let prestored = require("./prestored.json");
-app.use("/scoricombathome", express.static("public"));
-app.get("/scoricombathome", (req,res)=>{
+app.use("/", express.static("public"));
+app.get("/", (req,res)=>{
 	res.redirect("./index.html");	
 });
 app.use(fileUpload());
 app.use(cors({
 	origin: "*"
 }));
-app.post("/scoricombathome/upload", (req,res) => {
+app.post("/upload", (req,res) => {
 	if(!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No data uploaded.");
 	const path = `${__dirname}/uploads/${req.files.uploadedJSON.name}`;
 	req.files.uploadedJSON.mv(path).then((mvErr) => fs.readFile(path, (err,data) => {
@@ -43,10 +43,10 @@ app.post("/scoricombathome/upload", (req,res) => {
 	}));
 
 });
-app.get("/scoricombathome/prestoredPaths", (req,res)=>{
+app.get("/prestoredPaths", (req,res)=>{
 	res.json(require("./prestored.json"));
 });
-app.get("/scoricombathome/prestoredKeys", (req,res)=>{
+app.get("/prestoredKeys", (req,res)=>{
 	res.json(Object.keys(require("./prestored.json")));
 });
 app.listen(port, () => {

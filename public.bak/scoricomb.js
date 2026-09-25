@@ -13,15 +13,14 @@ prestoredScorePaths["0-0"] = [[[0],[0]]];
 prestoredScorePaths["6-0"] = [[[6],[0]],[[3,3],[0,0]],[[2,2,2],[0,0,0]]];
 prestoredScorePaths["7-0"] = [[[7],[0]],[[3,2,2],[0,0,0]]];
 prestoredScorePaths["8-0"] = [[[8],[0]],[[3,3,2],[0,0,0]],[[2,2,2,2],[0,0,0,0]],[[6,2],[0,0]]];
-function until(conditionFunction) {
-	const poll = resolve => {
-		if(conditionFunction()) resolve();
-		else setTimeout(_ => poll(resolve), 400);
-	}
-
-	return new Promise(poll);
-}
-
+const batchCollect = async (tasks=[], maxConcurrent=100) => {
+	let remaining = tasks;
+	let results = [];
+	while(remaining.length > 0) {
+		await Promise.all(remaining.splice(0, maxConcurrent).map(f => f())).then(res => results.push(...res));
+	};
+	return results;
+};
 const recursion = (a,b,paths,ap,bp,lvl,finalp,resultant) => {
 	[ap,bp,pprev,fls,finl] = scoricombSubperm(a,b,paths,ap,bp,lvl);
 	[finalp,resultant] = [finl,[]];
@@ -65,25 +64,25 @@ const scoricombSubperm = (a,b, paths=[],aPath=[],bPath=[],flags=[0,0,0],lvl=0) =
 	const storedKeys = Object.keys(prestoredScorePaths);
 	if(storedKeys.includes(p)) { // check for precalculated scores for dict key p
 		for(let pathSub of prestoredScorePaths[p]) { // extend our score path unto the shorter path by 1 score way
-			let [aPathClone, bPathClone] = [[...aPath], [...bPath]];
-			aPathClone = aPathClone.concat(pathSub[0]);
-			bPathClone = bPathClone.concat(pathSub[1]);
+			const [aPathClone, bPathClone] = [[...aPath], [...bPath]];
+			aPathClone.push(...pathSub[0]);
+			bPathClone.push(...pathSub[1]);
 			finalp.push([aPathClone,bPathClone]);
 		}
 		return [aPath,bPath,paths,[0,0,flags[2]],finalp];
 	} else if(storedKeys.includes(pRev)) { // check for precalculated scores for reversed dict key pRev
 		for(let pathSub of prestoredScorePaths[pRev]) { // extend our score path unto the shorter path by 1 score way
-			let [aPathClone, bPathClone] = [[...aPath], [...bPath]];
-			aPathClone = aPathClone.concat(pathSub[1]);
-			bPathClone = bPathClone.concat(pathSub[0]);
+			const [aPathClone, bPathClone] = [[...aPath], [...bPath]];
+			aPathClone.push(...pathSub[1]);
+			bPathClone.push(...pathSub[0]);
 			finalp.push([aPathClone,bPathClone]);
 		}
 		return [aPath,bPath,paths,[0,0,flags[2]],finalp];
 	}
 	for(let p of scoreWays) {
 		let [finall,resultantt] = recursion(a-p[0], b-p[1], paths, [...aPath, p[0]], [...bPath, p[1]], lvl+1, finalp, resultant);
-		finalp = finalp.concat(finall);
-		resultant = resultant.concat(resultantt);
+		finalp.push(...finall);
+		resultant.push(...resultantt);
 	}
 	for(let r of resultant) {
 		if(r[0].reduce((a,b) => a+b) == a && r[1].reduce((a,b)=>a+b) == b) {
@@ -112,32 +111,8 @@ const filterDown = (res,av,bv) => { // clean out bad/invalid score paths
 	return include.map(i => res[i]);
 };
 const scoriperm = (a,b) => {
-	let rawRes = scoricombSubperm(a,b);
-	return filterDown(rawRes[4],a,b);
+	let [_,__,___,____,res] = scoricombSubperm(a,b);
+	return filterDown(res,a,b);
 };
-function retrieveData() {
-	fetch("./prestoredPaths").then(r => r.json()).then(r => prestoredScorePaths = Object.assign(prestoredScorePaths, r));
-}
-function filterExisting(paths, existingKeys) {
-	let resultingObj = {};
-	for(let k of Object.keys(prestoredScorePaths))
-		if(!existingKeys.includes(k)) resultingObj[k] = paths[k];
-	return resultingObj;
-}
-function sendData() {
-	fetch("./prestoredKeys").then(r => r.json()).then(existing => {
-		let file = new File([JSON.stringify(filterExisting(prestoredScorePaths, existing))], `${Math.floor(Date.now()/1000)}.json`, {type: "application/json"});
-		let formData = new FormData();
-		formData.append("uploadedJSON", file);
-		fetch("./upload", {body: formData,method:"POST"});
-	});
-}
-const batchCollect = async (tasks=[], maxConcurrent=100) => {
-	let remaining = tasks;
-	let results = [];
-	while(remaining.length > 0) {
-		await Promise.all(remaining.splice(0, maxConcurrent).map(f => f())).then(res => results = results.concat(res));
-	};
-	return results;
-};
+scoriperm(9,9);
 // TODO: make sure reverse scores are added with their reverses too to prestored

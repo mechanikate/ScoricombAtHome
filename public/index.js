@@ -1,46 +1,12 @@
+function startWorking(maxScore) {
+	let worker = new Worker("overseer.js?v3");
+	worker.postMessage({maxScore: maxScore});
+}
+
 function updatePrestoredScoreCounter() {
 	document.getElementById("prestoredScoreCounter").innerHTML = Object.keys(prestoredScorePaths).length;
 }
-function startWorking(maxScore=12) {
-	let promises = [];
-	let tasks = [];
-	let prev = "";
-	for(let i=0; i<=maxScore; i++) for(let j=0; j<=maxScore; j++) {
-		document.getElementById("currentDisplay").innerHTML = prev; 
-		if(Object.keys(prestoredScorePaths).includes(`${i}-${j}`) || containsArray([i,j],deadEnds)) return;
-		let finall = scoriperm(i,j);
-		prev = `${i}-${j}: ${finall.length} paths`;
-		prestoredScorePaths[`${i}-${j}`] = finall;
-	}
-	Promise.all(tasks);
-	sendData();
-}
-function filterExisting(paths, existingKeys) {
-	let resultingObj = {};
-	for(let k of Object.keys(prestoredScorePaths))
-		if(!existingKeys.includes(k)) resultingObj[k] = paths[k];
-	return resultingObj;
-}
-function sendData() {
-	fetch("./prestoredKeys").then(r => r.json()).then(existing => {
-		let file = new File([JSON.stringify(filterExisting(prestoredScorePaths, existing))], `${Math.floor(Date.now()/1000)}.json`, {type: "application/json"});
-		let formData = new FormData();
-		formData.append("uploadedJSON", file);
-		fetch("./upload", {body: formData,method:"POST"});
-	});
-}
-function retrieveData() {
-	fetch("./prestoredPaths").then(r => r.json()).then(r => prestoredScorePaths = Object.assign(prestoredScorePaths, r));
-}
-function chartData() {
-	let data = [...Array(50)].map(e => Array(50).fill(null));
-	Object.keys(prestoredScorePaths).forEach(p => {
-		let [i,j] = p.split("-").map(x => parseInt(x));
-		if(i<j || deadEnds.includes([i,j]) || !Object.keys(prestoredScorePaths).includes(p)) return;
-		data[i][j]=prestoredScorePaths[p].length;
-	});
-	return data.map((val, index) => data.map(row => row[index]));
-}
+
 function updateChart() {
 	Plotly.newPlot('plotDiv', [{
 		type: "heatmap",
@@ -81,4 +47,14 @@ Plotly.newPlot('plotDiv', [{
 		autorange: "reversed"
 	}
 });
+
+function chartData() {
+	let data = [...Array(50)].map(e => Array(50).fill(null));
+	Object.keys(prestoredScorePaths).forEach(p => {
+		let [i,j] = p.split("-").map(x => parseInt(x));
+		if(i<j || deadEnds.includes([i,j]) || !Object.keys(prestoredScorePaths).includes(p)) return;
+		data[i][j]=prestoredScorePaths[p].length;
+	});
+	return data.map((val, index) => data.map(row => row[index]));
+}
 window.onload = () => {updatePrestoredScoreCounter(); updateChart(); retrieveData(); };
