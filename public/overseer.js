@@ -1,5 +1,5 @@
 importScripts("scoricomb.js?v4");
-const workerMax = 1;
+const workerMax = 2;
 onmessage = raw => {
 	let maxScore = raw.data.maxScore;
 	let promises = [];
