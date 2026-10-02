@@ -9,6 +9,6 @@ jobs:
         with:
           node-version: 26
           package-manager-cache: false
-      - run: npm build
+      - run: npm run build
       - uses: stefanzweifel/git-auto-commit-action@v7
 
