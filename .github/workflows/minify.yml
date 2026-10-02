@@ -12,4 +12,6 @@ jobs:
       - run: npm install
       - run: npm run build
       - uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: ${{ github.event.head_commit.message }}
 
