@@ -1,0 +1,15 @@
+name: GitHub Actions Demo
+run-name: Uglify code for dist
+on: [push]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          package-manager-cache: false
+        run: npm build
+      - uses: stefanzweifel/git-auto-commit-action@v7
+
