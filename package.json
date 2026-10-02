@@ -1,18 +1,21 @@
 {
-  "name": "scoricombathome",
-  "version": "1.0.0",
-  "description": "",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "express-fileupload": "^1.5.2",
-    "formidable": "^3.5.4",
-    "multer": "^2.4.0",
-    "socket.io": "^4.8.3"
-  }
+	"name": "scoricombathome",
+	"version": "1.0.0",
+	"description": "",
+	"type": "commonjs",
+	"main": "index.js",
+	"scripts": {
+		"prestart": "./prepare.sh",
+		"start": "node server.js"
+	},
+	"dependencies": {
+		"cors": "^2.8.6",
+		"express": "^5.2.1",
+		"express-fileupload": "^1.5.2",
+		"formidable": "^3.5.4",
+		"google-closure-compiler": "^20260927.0.0",
+		"multer": "^2.4.0",
+		"socket.io": "^4.8.3",
+		"uglify-js": "^3.19.3"
+	}
 }

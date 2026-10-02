@@ -16,7 +16,7 @@ app.use(cors({
 }));
 app.post("/upload", (req,res) => {
 	if(!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No data uploaded.");
-	const path = `${__dirname}/uploads/${Date.now()}`;
+	const path = `${__dirname}/uploads/${Date.now()}.json`;
 	req.files.uploadedJSON.mv(path).then((mvErr) => fs.readFile(path, (err,data) => {
 		if(err) return res.status(500).send(err);
 		if(mvErr) return res.status(500).send(mvErr);
@@ -39,7 +39,7 @@ app.post("/upload", (req,res) => {
 		console.log(`Valid data retrieved up to ${Object.keys(parsed)[Object.keys(parsed).length-1]}`);
 		fs.writeFileSync("prestored.json", JSON.stringify(prestored));
 		res.send("Success!");
-		fs.unlinkSync(path);
+		try { fs.unlinkSync(path); } catch {}
 	}));
 
 });
