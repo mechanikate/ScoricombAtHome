@@ -1,7 +1,7 @@
 name: Minify dist
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  minify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
