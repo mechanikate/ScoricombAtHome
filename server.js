@@ -6,8 +6,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 const sumVals = v => v.reduce((a,b)=>a+b);
 let prestored = require("./prestored.json");
-app.use("/", express.static("public"));
 app.use("/", express.static("public-dist"));
+app.use("/", express.static("dist"));
+app.use("/", express.static("static"));
 app.get("/", (req,res)=>{
 	res.redirect("./index.html");	
 });
