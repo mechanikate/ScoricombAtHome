@@ -11,6 +11,7 @@ jobs:
           package-manager-cache: false
       - run: npm install
       - run: npm run build
+      - run: sed -i.bak '/public-dist/d' .gitignore
       - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: ${{ github.event.head_commit.message }}
