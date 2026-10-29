@@ -2,7 +2,6 @@ node_modules
 package-lock.json
 prestored.json
 prestored.json.bak
-public-dist/
 public-old/
 uploads/*
 util/__pycache__
