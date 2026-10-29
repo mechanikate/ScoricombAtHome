@@ -3,6 +3,7 @@ package-lock.json
 prestored.json
 prestored.json.bak
 public-old/
+public-dist/
 uploads/*
 util/__pycache__
 util/*.png
