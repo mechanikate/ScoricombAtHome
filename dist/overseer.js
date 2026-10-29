@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 importScripts("scoricomb.min.js?v4");
-const workerMax = 2;
 let workers = [];
 let workerIndex = 0;
 function until(conditionFunction) {
@@ -23,9 +22,10 @@ function until(conditionFunction) {
 }
 onmessage = (raw) => __awaiter(void 0, void 0, void 0, function* () {
     let maxScore = raw.data.maxScore;
+    let workerMax = raw.data.workerMax;
     let tasks = [];
     let prev = "";
-    let [queuedTotal, completedTotal] = [0, 0];
+    let [queuedTotal, completedTotal] = [(maxScore + 1) * (maxScore + 2) / 2, 0];
     const initPrestored = Object.assign({}, prestoredScorePaths);
     retrieveData();
     yield until(() => prestoredScorePaths != initPrestored);
@@ -33,10 +33,11 @@ onmessage = (raw) => __awaiter(void 0, void 0, void 0, function* () {
         workers.push(new Worker("worker.min.js?v1"));
     for (let i = 0; i <= maxScore; i++)
         for (let j = 0; j <= i; j++) {
-            if (Object.keys(prestoredScorePaths).includes(`${i}-${j}`) || containsArray([i, j], deadEnds))
+            if (Object.keys(prestoredScorePaths).includes(`${i}-${j}`) || containsArray([i, j], deadEnds)) {
+                completedTotal++;
                 continue;
+            }
             tasks.push(() => __awaiter(void 0, void 0, void 0, function* () {
-                queuedTotal++;
                 if (Object.keys(prestoredScorePaths).includes(`${i}-${j}`) || containsArray([i, j], deadEnds))
                     return completedTotal++;
                 let completed = false;
@@ -56,6 +57,12 @@ onmessage = (raw) => __awaiter(void 0, void 0, void 0, function* () {
                     sendData();
                     completedTotal++;
                     completed = true;
+                    postMessage({
+                        latestScore: [i, j],
+                        latestScorePathCount: message.data.combed.length,
+                        queued: queuedTotal,
+                        completed: completedTotal
+                    });
                 };
                 workerIndex = (workerIndex + 1) % workerMax;
                 yield until(() => completed);

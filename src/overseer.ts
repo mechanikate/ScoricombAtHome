@@ -1,5 +1,12 @@
 importScripts("scoricomb.min.js?v4");
-const workerMax: number = 2;
+
+interface CombProgressMessage {
+	latestScore: number[];
+	latestScorePathCount: number;
+	queued: number;
+	completed: number;
+}
+
 let workers: any[] = [];
 let workerIndex: number = 0;
 function until(conditionFunction: () => boolean) {
@@ -12,17 +19,17 @@ function until(conditionFunction: () => boolean) {
 }
 onmessage = async (raw: any) => {
 	let maxScore = raw.data.maxScore;
+	let workerMax: number = raw.data.workerMax;
 	let tasks: any[] = [];
 	let prev: string = "";
-	let [queuedTotal,completedTotal]: number[] = [0, 0];
+	let [queuedTotal,completedTotal]: number[] = [(maxScore+1)*(maxScore+2)/2, 0];
 	const initPrestored = Object.assign({},prestoredScorePaths);
 	retrieveData();
 	await until(() => prestoredScorePaths != initPrestored);
 	for(let i=0; i<workerMax; i++) workers.push(new Worker("worker.min.js?v1"));
 	for(let i=0; i<=maxScore; i++) for(let j=0; j<=i; j++) {
-		if(Object.keys(prestoredScorePaths).includes(`${i}-${j}`) || containsArray([i,j],deadEnds)) continue;
+		if(Object.keys(prestoredScorePaths).includes(`${i}-${j}`) || containsArray([i,j],deadEnds)) { completedTotal++; continue; }
 		tasks.push(async () => {
-			queuedTotal++;
 			if(Object.keys(prestoredScorePaths).includes(`${i}-${j}`) || containsArray([i,j],deadEnds)) return completedTotal++;
 			
 			let completed = false;
@@ -42,6 +49,12 @@ onmessage = async (raw: any) => {
 				prestoredScorePaths[`${i}-${j}`] = message.data.combed;
 				sendData();
 				completedTotal++; completed = true;
+				postMessage({
+					latestScore: [i,j],
+					latestScorePathCount: message.data.combed.length,
+					queued: queuedTotal,
+					completed: completedTotal
+				});
 			};
 			workerIndex = (workerIndex+1)%workerMax;
 

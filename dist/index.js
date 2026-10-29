@@ -1,8 +1,23 @@
 "use strict";
+let fillIns = {};
 let graphMax = 50;
+let workerMax = 1;
 function startWorking(maxScore) {
     let worker = new Worker("overseer.min.js?v3");
-    worker.postMessage({ maxScore: maxScore });
+    worker.postMessage({ maxScore: maxScore, workerMax: workerMax });
+    worker.onmessage = (e) => {
+        const msg = e.data;
+        const [queued, completed, count] = [msg.queued, msg.completed, msg.latestScorePathCount];
+        const [a, b] = msg.latestScore;
+        const p = `${a}-${b}`;
+        fillIns[p] = count;
+        let [queuedProgress, queuedPercent] = [document.getElementById("queuedProgress"), document.getElementById("queuedPercent")];
+        if (queuedProgress)
+            queuedProgress.value = completed, queuedProgress.setAttribute("max", `${queued}`);
+        if (queuedPercent)
+            queuedPercent.innerHTML = `${(completed / queued * 100).toFixed(2)}% (latest: ${a}-${b} &rarr; ${count})`;
+        updateChart();
+    };
 }
 function updatePrestoredScoreCounter() {
     let ele = document.getElementById("prestoredScoreCounter");
@@ -62,6 +77,10 @@ var plot = Plotly.newPlot('plotDiv', [{
 });
 function chartData() {
     let data = [...Array(graphMax)].map(e => Array(graphMax).fill(null));
+    Object.entries(fillIns).forEach(([p, count]) => {
+        let [i, j] = p.split("-").map(x => parseInt(x));
+        data[i][j] = count;
+    });
     Object.keys(prestoredScorePaths).forEach((p) => {
         let [i, j] = p.split("-").map(x => parseInt(x));
         if (i < j || deadEnds.includes([i, j]) || !Object.keys(prestoredScorePaths).includes(p))
@@ -70,4 +89,18 @@ function chartData() {
     });
     return data.map((val, index) => data.map(row => row[index]));
 }
-window.onload = () => { retrieveData(); updatePrestoredScoreCounter(); updateChart(); };
+function updateWorkerMax(val) {
+    workerMax = val;
+    const workerMaxDisplay = document.getElementById("workerMaxDisplay");
+    if (workerMaxDisplay) {
+        workerMaxDisplay.innerHTML = `${workerMax}`;
+    }
+}
+window.onload = () => {
+    retrieveData();
+    updatePrestoredScoreCounter();
+    updateChart();
+    const workerMaxSlider = document.getElementById("workerMaxSlider");
+    if (workerMaxSlider)
+        workerMaxSlider.setAttribute("max", `${window.navigator.hardwareConcurrency}`);
+};

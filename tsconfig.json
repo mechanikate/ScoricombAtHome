@@ -4,7 +4,7 @@
 		"target": "es6",
 		"outDir": "dist/",
 		"rootDir": "src/",
-		"lib": ["webworker", "es6", "dom", "es2016"],
+		"lib": ["webworker", "es6", "dom", "es2017"],
 		"skipLibCheck": true
 	},
 	"include": ["src/**/*"],

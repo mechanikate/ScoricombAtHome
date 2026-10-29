@@ -1,9 +1,24 @@
 declare var Plotly: any;
+type FillInDataset = Record<ScorePathIdentifier, number>;
 
+let fillIns: FillInDataset = {};
 let graphMax: number = 50;
+let workerMax: number = 1;
+
 function startWorking(maxScore: number) {
 	let worker = new Worker("overseer.min.js?v3");
-	worker.postMessage({maxScore: maxScore});
+	worker.postMessage({maxScore: maxScore, workerMax: workerMax});
+	worker.onmessage = (e: any) => {
+		const msg: CombProgressMessage = e.data;
+		const [queued,completed, count] = [msg.queued, msg.completed, msg.latestScorePathCount];
+		const [a,b] = msg.latestScore;
+		const p: ScorePathIdentifier = `${a}-${b}`;
+		fillIns[p] = count;
+		let [queuedProgress, queuedPercent]: [HTMLProgressElement | null, HTMLElement | null] = [document.getElementById("queuedProgress") as HTMLProgressElement, document.getElementById("queuedPercent")];
+		if(queuedProgress) queuedProgress.value = completed, queuedProgress.setAttribute("max", `${queued}`);
+		if(queuedPercent) queuedPercent.innerHTML = `${(completed/queued*100).toFixed(2)}% (latest: ${a}-${b} &rarr; ${count})`;
+		updateChart();	
+	};
 }
 
 function updatePrestoredScoreCounter() {
@@ -65,6 +80,10 @@ var plot: any = Plotly.newPlot('plotDiv', [{
 
 function chartData() {
 	let data: number[][] = [...Array(graphMax)].map(e => Array(graphMax).fill(null));
+	Object.entries(fillIns).forEach(([p,count]) => {
+		let [i,j] = p.split("-").map(x => parseInt(x));
+		data[i][j] = count;
+	});
 	(Object.keys(prestoredScorePaths) as ScorePathIdentifier[]).forEach((p: ScorePathIdentifier) => {
 		let [i,j] = p.split("-").map(x => parseInt(x));
 		if(i<j || deadEnds.includes([i,j]) || !Object.keys(prestoredScorePaths).includes(p)) return;
@@ -72,4 +91,19 @@ function chartData() {
 	});
 	return data.map((val, index) => data.map(row => row[index]));
 }
-window.onload = () => {retrieveData(); updatePrestoredScoreCounter(); updateChart(); };
+
+function updateWorkerMax(val: number) {
+	workerMax = val;
+	const workerMaxDisplay: HTMLElement | null = document.getElementById("workerMaxDisplay");
+	if(workerMaxDisplay)  { workerMaxDisplay.innerHTML = `${workerMax}`; }
+}
+window.onload = () => {
+	retrieveData(); 
+	updatePrestoredScoreCounter(); 
+	updateChart(); 
+
+	const workerMaxSlider: HTMLInputElement | null = (document.getElementById("workerMaxSlider") as HTMLInputElement); 
+	if(workerMaxSlider) workerMaxSlider.setAttribute("max", `${window.navigator.hardwareConcurrency}`);
+
+};
+
