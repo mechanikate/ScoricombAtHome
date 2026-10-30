@@ -7,7 +7,6 @@ const port = process.env.PORT || 3000;
 const sumVals = v => v.reduce((a,b)=>a+b);
 let prestored = require("./prestored.json");
 app.use("/", express.static("public-dist"));
-app.use("/", express.static("dist"));
 app.use("/", express.static("static"));
 app.get("/", (req,res)=>{
 	res.redirect("./index.html");	
@@ -20,23 +19,22 @@ app.post("/upload", (req,res) => {
 	if(!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No data uploaded.");
 	const path = `${__dirname}/uploads/${Date.now()}.json`;
 	req.files.uploadedJSON.mv(path).then((mvErr) => fs.readFile(path, (err,data) => {
-		if(err) return res.status(500).send(err);
-		if(mvErr) return res.status(500).send(mvErr);
+		if(err || mvErr) return res.status(500).send(err || mvErr);
 		let parsed;
 		try { parsed = JSON.parse(data); } catch(parseErr) { 
 			console.error(parseErr);
 			return res.status(500).send(parseErr);
 		}
-		if(
-			!parsed ||
-			!Object.keys(parsed).reduce((acc,k) => {
+		if( // if
+			!parsed || // parsing failed, or
+			!Object.keys(parsed).reduce((acc,k) => { 
 				let [a,b] = k.split("-").map(e => parseInt(e));
 				let ret = (Array.isArray(parsed[k]) && parsed[k].reduce((sumAcc, v) => {
-					return sumAcc && sumVals(v[0])===a && sumVals(v[1])===b;
+					return sumAcc && sumVals(v[0])===a && sumVals(v[1])===b; // sums of all paths don't add up to [[a],[b]],
 				}, true));
 				return acc && ret;
 			}, true)
-		) return res.status(400).send("Data not in correct format.");
+		) return res.status(400).send("Data not in correct format."); // then throw error for user complaining of incorrect format
 		prestored = Object.assign(prestored, parsed);
 		console.log(`Valid data retrieved up to ${Object.keys(parsed)[Object.keys(parsed).length-1]}`);
 		fs.writeFileSync("prestored.json", JSON.stringify(prestored));
